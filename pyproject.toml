@@ -1,0 +1,17 @@
+[project]
+name = "latex-formatting"
+version = "0.1.0"
+description = "Run code required for latex formatting tutorial"
+authors = [
+    { name="Annalena Kofler", email="annalena.kofler1@gmail.com" }
+]
+requires-python = ">=3.8"
+dependencies = [
+    "pandas",
+    "numpy",
+    "notebook"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

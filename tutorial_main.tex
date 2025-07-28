@@ -1,0 +1,465 @@
+\documentclass{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+%%%%%% Packages relevant for tables %%%%%%%%
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage{siunitx}
+
+%%%%%% Packages relevant for colors
+\definecolor{blue}{RGB}{63, 144, 218}
+
+%%%%%%%%%%%%% COLORED TABLE CODE %%%%%%%%%%%%
+% Colored table code based on a combination of https://tex.stackexchange.com/questions/236274/tabularx-or-tabulary-populated-by-csvsimple
+% and https://tex.stackexchange.com/questions/174998/are-there-an-easy-way-to-coloring-tables-depending-on-the-value-in-each-cell
+% which is in turn based partially on https://www.siavoosh.com/blog/2019/01/05/latex-table-cell-coloring-based-on-values-in-the-cell/#respond
+%======================================
+% Packages
+%\usepackage[table]{xcolor}
+\usepackage{csvsimple}
+\usepackage{etoolbox}
+\usepackage{pgf} % for calculating the values for gradient
+%======================================
+% Color set related
+%% Red -- Blue gradient from https://www.nceas.ucsb.edu/sites/default/files/2022-06/Colorblind%20Safe%20Color%20Schemes.pdf
+\definecolor{max_perc}{RGB}{016, 101, 171} % blue1
+\definecolor{five_perc}{RGB}{142, 196, 222} %blue3
+\definecolor{one_perc}{RGB}{249, 249, 249} % grayish1
+\definecolor{towards_one_perc}{RGB}{246, 164, 130} % peach2
+\definecolor{zero_perc}{RGB}{179, 021, 041} % red2
+\newcommand*{\opacity}{40}% here you can change the opacity of the background color!
+%======================================
+% Data set related: Color transition values
+\newcommand*{\minval}{0.0}     % red
+\newcommand*{\valA}{0.8}       % orange
+\newcommand*{\valB}{1.0}      % yellow
+\newcommand*{\valC}{5.0}      % green
+\newcommand*{\maxval}{70.0}    % dark green
+%======================================
+% Gradient function with intermediate colors
+\newcommand{\gradient}[1]{%
+    \pgfmathsetmacro{\value}{#1}%
+    % Clamp to range
+    \pgfmathsetmacro{\value}{min(max(\value,\minval),\maxval)}%
+
+    \ifdim\value pt<\valA pt
+        \pgfmathsetmacro{\pctraw}{100*(\value - \minval)/(\valA - \minval)}%
+        \pgfmathparse{int(round(\pctraw))}%
+        \edef\colorcmd{\noexpand\cellcolor{towards_one_perc!\pgfmathresult!zero_perc!\opacity}}%
+
+    \else\ifdim\value pt<\valB pt
+        \pgfmathsetmacro{\pctraw}{100*(\value - \valA)/(\valB - \valA)}%
+        \pgfmathparse{int(round(\pctraw))}%
+        \edef\colorcmd{\noexpand\cellcolor{one_perc!\pgfmathresult!towards_one_perc!\opacity}}%
+
+    \else\ifdim\value pt<\valC pt
+        \pgfmathsetmacro{\pctraw}{100*(\value - \valB)/(\valC - \valB)}%
+        \pgfmathparse{int(round(\pctraw))}%
+        \edef\colorcmd{\noexpand\cellcolor{five_perc!\pgfmathresult!one_perc!\opacity}}%
+
+    \else
+        \pgfmathsetmacro{\pctraw}{100*(\value - \valC)/(\maxval - \valC)}%
+        \pgfmathparse{int(round(\pctraw))}%
+        \edef\colorcmd{\noexpand\cellcolor{max_perc!\pgfmathresult!five_perc!\opacity}}%
+    \fi\fi\fi
+
+    \colorcmd\rule{0pt}{2.5ex}\hspace{4pt}#1~\%\hspace{3pt}
+}
+
+%%% Packages relevant for code formatting
+\usepackage{tcolorbox}
+
+\tcbuselibrary{listings} % not listingsutf8
+% Define a custom listing style for LaTeX code blocks
+\newtcblisting{latexcode}{
+  listing engine=listings,
+  colback=gray!10,
+  colframe=gray!50,
+  listing only,
+  %breaklines=true,
+  boxrule=0.5pt,
+  left=6pt,
+  right=6pt,
+  top=6pt,
+  bottom=6pt,
+  fontupper=\ttfamily\small,
+  %enhanced,
+  title=LaTeX Code
+}
+
+\usepackage{listings} % required for the listings engine
+
+%%%%%%%%
+
+\title{\bfseries\Large How to create professional \LaTeX~Tables}
+\author{\normalsize Annalena Kofler, \today}
+\date{} % Remove date
+
+\begin{document}
+\maketitle
+
+\vspace{-1em}
+\noindent\textbf{Abstract:} This document showcases how to properly format tables in \LaTeX, 
+including float alignment, cell coloring, loading values from a csv file and automatic, value-dependent coloring.\footnote{The code for this tutorial is available in \href{https://github.com/annalena-k/tutorial_latex_formatting}{this repository}.}
+
+\vspace{1em}
+
+\section{Basic rules about tables}
+Before we go into the details of table formatting, I want to state some general rules regarding tables:
+\begin{itemize}
+    \item \textbf{Only use tables if you have no other way of visualizing the numbers.} 
+    Tables require a significantly larger amount of human staring-time to understand its content than any thought-through dot plots, line graphs, bar chart, or even pie charts.
+    Since humans are very good at understanding visual relationships (e.g., spatial alignment, sizes, shapes, colors, and textures), tables could be seen as the boring grandma among the ingredients included in a paper. 
+    Unfortunately, tables have become the preferred way of communicating state-of-the-art performance and SOTA comparisons in machine learning.
+    While I believe that most information in tables can be displayed in a figure with some effort, I understand that there will be cases where a table is the only solution.
+    \item \textbf{Intentionally decide on your table content. Less is more.} 
+    Ideally, the column and row labels are descriptive without needing excessive explanation, the compared quantities are restricted to the most relevant ones, and the included numbers are directly comparable and can easily be interpreted.
+    If you include multiple quantities where it is unclear if lower or higher is better, add small arrows ($\uparrow$ or $\downarrow$) in the column header.
+    Try to keep the size of the table to a minimum and if you don't have another choice, use visual clues (see next point).
+    \item \textbf{Vertical lines should be avoided at all cost!}
+    \item \textbf{The table caption has to be located above the table (contrary to figures!).} You can simply move \verb|\caption{This is the table caption.}| above \begin{verbatim}
+        \begin{tabular}{...}
+            ...
+        \end{tabular}
+    \end{verbatim}
+    \item \textbf{Make an effort to include visual clues.}
+    Humans tend to grasp colors, textures, shapes, and sizes before actually reading numbers. 
+    After reading the number, the reader has to first interpret it (Is it large or small? Is high or low better? ...) and put it in relation to the other values in the table before understanding its meaning.
+    This means that tables are hard to understand if you don't know what you are looking for.
+    As a result, it is the duty of the writer to include visual guidance within the table which helps the reader understand and interpret the table's contents.
+    Visual cues can be anything from marking the best numbers in bold to highlighting the cell with different colors.
+\end{itemize}
+
+\section{Aligning values at the comma}
+Tables can be hard to read, especially when different rows contain values specified to various decimal points. 
+Ideally, these values should align after the comma.
+For this purpose, the \verb|\usepackage{siunitx}| provides the \verb|S|-type column.
+You can see an example showcasing this behavior in Table~\ref{table:alignment} which can be generated with this code:
+
+
+\begin{latexcode}
+    \usepackage{booktabs} % For \toprule etc.
+    \usepackage{siunitx}  % For scientific alignment
+    \begin{table}
+        \centering
+        \caption{The caption should be above the table.}
+        \label{table:alignment}
+        \begin{tabular}{cS} 
+            \toprule
+            not aligned & {aligned} \\ \midrule
+            1.23 & 1.23 \\
+            42.1 & 42.1\\
+            678.910 & 678.910\\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{latexcode}
+
+\begin{table}[ht]
+    \centering
+    \caption{The caption should be above the table.}
+    \label{table:alignment}
+    \begin{tabular}{cS} 
+        \toprule
+        not aligned & {aligned} \\ \midrule
+        1.23 &1.23 \\
+        42.1 &42.1\\
+        678.910 & 678.910\\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\section{Highlighting table values vs. coloring table cells}
+If you compare different methods within a table, there is a notion of \textit{X is better than Y.}.
+In such cases, you can guide the reader's eye by highlighting the better value.
+Oftentimes, the better value is put in the \verb|\textbf{}| or \verb|\mathbf{}| environment, however this can mess up the decimal alignment, as clearly visible in Table~\ref{table:bold_vs_cell_color}.
+
+\begin{table}[ht]
+    \caption{Bold text vs. cell coloring.}
+    \label{table:bold_vs_cell_color}
+    \centering
+    \begin{tabularx}{\linewidth}{
+        X
+        SS
+        c
+        !{\color{white}\ }S % Text before S forces some white space between columns.
+        !{\color{white}\ }S
+    }
+        \toprule
+        & 
+            \multicolumn{2}{c}{Bold text} &
+            & 
+            \multicolumn{2}{c}{Cell coloring} \\
+
+        \cmidrule{2-3}
+        \cmidrule{5-6}
+        & \multicolumn{1}{c}{$\mathbb{E}_p \left[ \log(p/q_\theta)\right] \, \downarrow$} & 
+            \multicolumn{1}{c}{$\epsilon (\unit{\percent}) \, \uparrow$} & 
+            & 
+            \multicolumn{1}{c}{$\mathbb{E}_p \left[ \log(p/q_\theta)\right] \, \downarrow$} & 
+            \multicolumn{1}{c}{$\epsilon (\unit{\percent}) \, \uparrow$} \\
+        \midrule
+        Baseline &
+            \textemdash &
+            7.52(0.21) &
+            &
+            \textemdash &
+            7.52(0.21) \\ \addlinespace[.25em]
+        Method 1 & 
+            9.1581(11) & 
+            87.02(8) & 
+            &
+            9.1581(11) & 
+            87.02(8) \\ \addlinespace[.25em]
+        Method 2 & 
+            \textbf{9.0978(5)} & % Try out both
+            $\mathbf{99.67(1)}$ & % Try out both
+            & 
+            \cellcolor{blue!25} 9.0978(5) & 
+            \cellcolor{blue!25} 99.67(1) \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Instead, we can highlight the background of the cell with a specific color, using the \verb|\usepackage{xcolor}| and defining a custom color via RBG values as \verb|\definecolor{blue}{RGB}{63, 144, 218}|.
+A specific cell can be colored with the command \verb|\cellcolor{blue!25}| where the color is followed by \verb|!25| to indicate "mix 25\% of blue with 75\% of white".
+If you want to mix two colors where one is not white, you can use this syntax: \verb|<color1> ! <percentage> ! <color2>|.
+
+
+The code to generate this table is included in the following for completeness:
+\begin{latexcode}
+    \usepackage{amssymb, amsmath}
+    \usepackage{tabularx}
+    \usepackage{booktabs} % For \toprule etc.
+    \usepackage{siunitx} % For scientific alignment
+    \usepackage{xcolor} % For cell color command
+    \definecolor{blue}{RGB}{63, 144, 218} % Define background color
+
+    \begin{table}[ht]
+    \caption{Bold text vs. cell coloring.}
+    \label{table:bold_vs_cell_color}
+    \centering
+    \begin{tabularx}{\linewidth}{
+        X
+        SS
+        c
+        !{\color{white}\ }S % Text before S forces some white space between columns.
+        !{\color{white}\ }S
+    }
+        \toprule
+        & 
+            \multicolumn{2}{c}{Bold text} &
+            & 
+            \multicolumn{2}{c}{Cell coloring} \\
+
+        \cmidrule{2-3}
+        \cmidrule{5-6}
+        & \multicolumn{1}{c}{$\mathbb{E}_p \left[ \log(p/q_\theta)\right] \, \downarrow$} & 
+            \multicolumn{1}{c}{$\epsilon (\unit{\percent}) \, \uparrow$} & 
+            & 
+            \multicolumn{1}{c}{$\mathbb{E}_p \left[ \log(p/q_\theta)\right] \, \downarrow$} & 
+            \multicolumn{1}{c}{$\epsilon (\unit{\percent}) \, \uparrow$} \\
+        \midrule
+        Baseline &
+            \textemdash &
+            7.52(0.21) &
+            &
+            \textemdash &
+            7.52(0.21) \\ \addlinespace[.25em]
+        Method 1 & 
+            9.1581(11) & 
+            87.02(8) & 
+            &
+            9.1581(11) & 
+            87.02(8) \\ \addlinespace[.25em]
+        Method 2 & 
+            \textbf{9.0978(5)} & % Try out both
+            $\mathbf{99.67(1)}$ & % Try out both
+            & 
+            \cellcolor{blue!25} 9.0978(5) & 
+            \cellcolor{blue!25} 99.67(1) \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+\end{latexcode}
+
+
+\section{Importing csv values in \LaTeX}
+Oftentimes, values are manually typed or copied over from another file into the \LaTeX document.
+This is error-prone since it is very easy to miss a number which can completely change the scientific result.
+Instead, you can let your analysis script write the results into a \verb|.csv| file, load it in \LaTeX and print these values automatically in the text or into your table.
+This makes updating numbers so much easier and takes the human copying error out of the equation.
+It is especially helpful, if you need to include a lot of numbers.
+
+\subsection{Loading individual values}
+If you want to write individual values in your text, you can use the \verb|datatool| package\footnote{Code from this \href{https://tex.stackexchange.com/questions/524473/latex-get-variables-out-of-a-cvs-row/524474\#524474}{StackExchange answer}.}
+You can define a macro in the preamble:
+\begin{latexcode}
+    % In preamble
+    \usepackage{datatool}
+    \newcommand{\printval}[1]{% define shortcut for convenience
+        \DTLfetch%
+            {mydata}% database name {key}% key column name {#1}% key value
+            {value}% value column name
+        \xspace% handle spacing 
+    }
+\end{latexcode}
+and print it in the main document via:
+\begin{latexcode}
+    % In main document
+    \DTLloaddb{mydata}{mydata.csv} % load CSV file into database `mydata` 
+    The value of x is \printval{x} and y = \printval{y}!
+\end{latexcode}
+
+\subsection{Loading a full table}
+To load a full table from a csv file\footnote{This part is based on \href{https://tex.stackexchange.com/questions/236274/tabularx-or-tabulary-populated-by-csvsimple}{this StackExchange discussion and its examples}.}, we use the \verb|csvsimple| package and read in values within the \verb|tabularx| environment via \verb|\csvreader|.
+\verb|csvreader| follows the syntax 
+\begin{latexcode}
+    \csvreader[<options>]{<filename>}{<column definitions>}{<code to execute per row>}
+\end{latexcode}
+where \verb|<code to execute per row>| is most often specified as
+\begin{latexcode}
+    {\csvcoli & \csvcolii & \csvcoliii & \csvcoliv & ...}
+\end{latexcode}
+
+We import the file \verb|tables/table_plain.csv| with the following code:
+\begin{latexcode}
+    \begin{table*}[ht]
+        \caption{Table with values loaded from csv.}
+        \label{table:load_from_csv}
+        \centering
+        \begin{tabularx}{0.85\linewidth}{lSSSSSSS}
+            \\ \toprule 
+            Categories & \multicolumn{1}{c}{A} & \multicolumn{1}{c}{B} & \multicolumn{1}{c}{C} & \multicolumn{1}{c}{D} & \multicolumn{1}{c}{E} & \multicolumn{1}{c}{F} & \multicolumn{1}{c}{G} % scientific column has trouble with string column names
+            \\ \midrule
+            \csvreader[late after line=\\,
+            late after last line=\\ \bottomrule
+            ]{tables/table_plain.csv}
+              {}
+              {\csvcoli & \csvcolii & \csvcoliii & \csvcoliv & \csvcolv & \csvcolvi & \csvcolvii & \csvcolviii}
+        \end{tabularx}
+    \end{table*}
+\end{latexcode}
+and the result can be found in Table~\ref{table:load_from_csv}.
+
+\begin{table*}[ht]
+    \caption{Table with values loaded from csv.}
+    \label{table:load_from_csv}
+    \centering
+    \begin{tabularx}{0.85\linewidth}{lSSSSSSS}
+        \\ \toprule 
+        Categories & \multicolumn{1}{c}{A} & \multicolumn{1}{c}{B} & \multicolumn{1}{c}{C} & \multicolumn{1}{c}{D} & \multicolumn{1}{c}{E} & \multicolumn{1}{c}{F} & \multicolumn{1}{c}{G} % scientific column has trouble with string column names
+        \\ \midrule
+        \csvreader[late after line=\\,
+        late after last line=\\ \bottomrule
+        ]{tables/table_plain.csv}
+          {}
+          {\csvcoli & \csvcolii & \csvcoliii & \csvcoliv & \csvcolv & \csvcolvi & \csvcolvii & \csvcolviii}
+    \end{tabularx}
+\end{table*}
+
+\section{Automatically coloring a csv table with a color gradient}
+For large tables, we might want to automatically import the csv file and color the cell dependent on its float value\footnote{This code is partially based on \href{https://tex.stackexchange.com/questions/174998/are-there-an-easy-way-to-coloring-tables-depending-on-the-value-in-each-cell}{this StackExchange example} 
+which is in turn based partially on \href{https://www.siavoosh.com/blog/2019/01/05/latex-table-cell-coloring-based-on-values-in-the-cell/\#respond}{this link}}.
+Since it is not easy to define continuous colormap in \LaTeX, we interpolate between a multiple individual colors to create a divergent colormap.
+Please be aware that red-green colormaps are not suitable for color impaired or colorblind readers, and we will use a red-blue colormap from \href{https://www.nceas.ucsb.edu/sites/default/files/2022-06/Colorblind%20Safe%20Color%20Schemes.pdf}{this guide}.
+
+This requires the definition of a more elaborate macro. We start with defining the colors we want to interpolate and the interpolation values:
+\begin{latexcode}
+    \usepackage[table]{xcolor}
+    \usepackage{csvsimple}
+    \usepackage{etoolbox}
+    \usepackage{pgf} % for calculating the values for gradient
+    \definecolor{max_perc}{RGB}{016, 101, 171} % blue1
+    \definecolor{five_perc}{RGB}{142, 196, 222} %blue3
+    \definecolor{one_perc}{RGB}{249, 249, 249} % grayish1
+    \definecolor{towards_one_perc}{RGB}{246, 164, 130} % peach2
+    \definecolor{zero_perc}{RGB}{179, 021, 041} % red2
+    \newcommand*{\opacity}{40}% opacity of the cell background color
+    % Data set related: Color transition values
+    \newcommand*{\minval}{0.0}
+    \newcommand*{\valA}{0.8}
+    \newcommand*{\valB}{1.0}
+    \newcommand*{\valC}{5.0}
+    \newcommand*{\maxval}{70.0}
+\end{latexcode}
+and finally, we can define the makro for the gradient function:
+\begin{latexcode}
+    % Gradient function with intermediate colors
+    \newcommand{\gradient}[1]{%
+        \pgfmathsetmacro{\value}{#1}%
+        % Clamp to range [\minval, \maxval]
+        \pgfmathsetmacro{\value}{min(max(\value,\minval),\maxval)}%
+        % Color values in [\minval, \valA]
+        \ifdim\value pt<\valA pt
+            \pgfmathsetmacro{\pctraw}{100*(\value - \minval)/(\valA - \minval)}%
+            \pgfmathparse{int(round(\pctraw))}%
+            \edef\colorcmd{\noexpand\cellcolor{towards_one_perc!\pgfmathresult!zero_perc!\opacity}}%
+        % Color values in [\valA, \valB]
+        \else\ifdim\value pt<\valB pt
+            \pgfmathsetmacro{\pctraw}{100*(\value - \valA)/(\valB - \valA)}%
+            \pgfmathparse{int(round(\pctraw))}%
+            \edef\colorcmd{\noexpand\cellcolor{one_perc!\pgfmathresult!towards_one_perc!\opacity}}%
+        % Color values in [\valB, \valC]
+        \else\ifdim\value pt<\valC pt
+            \pgfmathsetmacro{\pctraw}{100*(\value - \valB)/(\valC - \valB)}%
+            \pgfmathparse{int(round(\pctraw))}%
+            \edef\colorcmd{\noexpand\cellcolor{five_perc!\pgfmathresult!one_perc!\opacity}}%
+        % Color values in [\valC, \maxval]
+        \else
+            \pgfmathsetmacro{\pctraw}{100*(\value - \valC)/(\maxval - \valC)}%
+            \pgfmathparse{int(round(\pctraw))}%
+            \edef\colorcmd{\noexpand\cellcolor{max_perc!\pgfmathresult!five_perc!\opacity}}%
+        \fi\fi\fi
+        % Add percentage symbol after float
+        \colorcmd\rule{0pt}{2.5ex}\hspace{4pt}#1~\%\hspace{3pt}
+}
+\end{latexcode}
+
+We can now simply wrap the floating point values with \verb|\text{\gradient{...}}| when saving them into the csv file and create the table via:
+\begin{latexcode}
+    \begin{table*}[ht]
+        \caption{Colored table with values imported from csv.}
+        \label{table:colored_imported_table}
+        \centering
+        \begin{tabularx}{0.85\linewidth}{lc@{}c@{}c@{}c@{}c@{}c@{}c@{}} % @{} removes white spaces between columns
+            \toprule
+            Event & A & B & C & D & E & F & G \\ \midrule
+            \csvreader[late after line=\\,late after last line=\\ \bottomrule]{tables/table_gradient.csv}
+              {}
+              {\csvcoli & \csvcolii & \csvcoliii & \csvcoliv & \csvcolv & \csvcolvi & \csvcolvii & \csvcolviii}
+        \end{tabularx}
+    \end{table*}
+\end{latexcode}
+
+The final table is displayed in Table~\ref{table:colored_imported_table}. Unfortunately, it is not possible to load a plain csv file and color the cells that contain the maximal value per column, since \verb|\csvreader| reads the data line by line.
+\begin{table*}[ht]
+    \caption{Colored table with values imported from csv.}
+    \label{table:colored_imported_table}
+    \centering
+    \begin{tabularx}{0.85\linewidth}{lc@{}c@{}c@{}c@{}c@{}c@{}c@{}}
+        \toprule
+        Event & A & B & C & D & E & F & G \\ \midrule
+        \csvreader[late after line=\\,late after last line=\\ \bottomrule]{tables/table_gradient.csv}
+          {}
+          {\csvcoli & \csvcolii & \csvcoliii & \csvcoliv & \csvcolv & \csvcolvi & \csvcolvii & \csvcolviii}
+    \end{tabularx}
+\end{table*}
+
+\end{document}

@@ -1,0 +1,16 @@
+Categories,A,B,C,D,E,F,G
+\text{a},\text{\gradient{17.68}},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}}
+\text{b},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}}
+\text{c},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}},\text{\gradient{0.12}}
+\text{d},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}},\text{\gradient{0.12}},\text{\gradient{0.0}}
+\text{e},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}},\text{\gradient{0.12}},\text{\gradient{0.0}},\text{\gradient{0.12}}
+\text{f},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}},\text{\gradient{0.12}},\text{\gradient{0.0}},\text{\gradient{0.12}},\text{\gradient{3.12}}
+\text{g},\text{\gradient{17.68}},\text{\gradient{3.13}},\text{\gradient{0.12}},\text{\gradient{0.0}},\text{\gradient{0.12}},\text{\gradient{3.12}},\text{\gradient{17.68}}
+\text{h},\text{\gradient{3.13}},\text{\gradient{0.12}},\text{\gradient{0.0}},\text{\gradient{0.12}},\text{\gradient{3.12}},\text{\gradient{17.68}},\text{\gradient{48.71}}
+\text{i},\text{\gradient{0.12}},\text{\gradient{0.0}},\text{\gradient{0.12}},\text{\gradient{3.12}},\text{\gradient{17.68}},\text{\gradient{48.71}},\text{\gradient{84.09}}
+\text{j},\text{\gradient{0.0}},\text{\gradient{0.12}},\text{\gradient{3.12}},\text{\gradient{17.68}},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}}
+\text{k},\text{\gradient{0.12}},\text{\gradient{3.12}},\text{\gradient{17.68}},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}}
+\text{l},\text{\gradient{3.12}},\text{\gradient{17.68}},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}}
+\text{m},\text{\gradient{17.68}},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}}
+\text{n},\text{\gradient{48.71}},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}}
+\text{o},\text{\gradient{84.09}},\text{\gradient{100.0}},\text{\gradient{84.09}},\text{\gradient{48.71}},\text{\gradient{17.68}},\text{\gradient{3.13}},\text{\gradient{0.12}}

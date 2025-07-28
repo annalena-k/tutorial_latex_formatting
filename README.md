@@ -11,3 +11,5 @@ I plan to include additional topics in the future.
 
 ### Versioning
 LaTeX versions and their packages change constantly. I can't keep track of all changes and adapt my code quickly. If you find bugs, please leave an issue or create a pull request with an update!
+
+![Dog with cool, pixelated sun glasses with the text "Your tables after going through this repository."](meme_tables.jpg)
